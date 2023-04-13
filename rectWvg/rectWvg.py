@@ -11,19 +11,19 @@
 import meep as mp
 
 # a = 1 (meep length unit) = 10 mils
-rect_a = 61 ####122 # 122 mils
-rect_b = 122 ####61 # 61 mils
+rect_b = 61 ####122 # 122 mils
+rect_a = 122 ####61 # 61 mils
 
-src_wavelength = 158 #rect_a/3.1 #158 # 158 mils = 4 mm, wavelength
-rect_len = 6*rect_b ####6*rect_a #6*src_wavelength
-d_pml = 1*src_wavelength# rect_b ####rect_a #src_wavelength
-d_wall = 0.5*rect_a # metal wall thickness
-cell_size = mp.Vector3(2*d_wall+2*d_pml+rect_a,2*d_wall+2*d_pml+rect_b,2*d_pml+rect_len)
+src_wavelength = 158 #rect_b/3.1 #158 # 158 mils = 4 mm, wavelength
+rect_len = 6*rect_a ####6*rect_b #6*src_wavelength
+d_pml = 1*src_wavelength# rect_a ####rect_b #src_wavelength
+d_wall = 0.5*rect_b # metal wall thickness
+cell_size = mp.Vector3(2*d_wall+2*d_pml+rect_b,2*d_wall+2*d_pml+rect_a,2*d_pml+rect_len)
 
 # OVERALL GEOMETRY
 geometry = []
 geometry.append(mp.Block(center=mp.Vector3(), size=cell_size, material=mp.metal))
-geometry.append(mp.Block(center=mp.Vector3(), size=mp.Vector3(rect_a,rect_b,cell_size.z), material=mp.air))
+geometry.append(mp.Block(center=mp.Vector3(), size=mp.Vector3(rect_b,rect_a,cell_size.z), material=mp.air))
 
 # BOUNDARY CONDITIONS
 # boundary_layers = []
@@ -33,7 +33,7 @@ boundary_layers = [mp.PML(thickness=d_pml)] # PML all round
 # FREQUENCY, RESOLUTION, AND RUN TIME
 f_cen = 1/src_wavelength
 f_wid = 0.001 # calculated value for 71-86 GHz
-resolution = round(5/rect_a,3) ####round(5/rect_b,3) # 5 cells per shorter edge of the waveguide # 10/src_wavelength # 10 cells per wavelength
+resolution = round(5/rect_b,3) ####round(5/rect_a,3) # 5 cells per shorter edge of the waveguide # 10/src_wavelength # 10 cells per wavelength
 run_time = 8000 #cell_size.z # enough to reach the other end 10*src_wavelength # 15 cycles of the center tone
 
 num_cells = [s*resolution for s in [cell_size.x, cell_size.y, cell_size.z]]
@@ -52,7 +52,7 @@ sources = [
     mp.GaussianSource(frequency=f_cen,fwidth=f_wid),
     # mp.ContinuousSource(frequency=f_cen,fwidth=f_wid),
     center=mp.Vector3(0,0,-(cell_size.z/2-d_pml)),
-    size=mp.Vector3(rect_a,rect_b,0), # just the waveguide cavity
+    size=mp.Vector3(rect_b,rect_a,0), # just the waveguide cavity
     # size=mp.Vector3(cell_size.x,cell_size.y,0), # the entire cross section, including metal walls
     direction=mp.NO_DIRECTION, # try changing this to mp.Z
     eig_kpoint=kpoint,
@@ -74,8 +74,8 @@ sources = [
 # ]
 
 # MONITOR PLANES
-fr_neg = mp.FluxRegion(center=mp.Vector3(0,0,-cell_size.z/4),size=mp.Vector3(rect_a,rect_b,0))
-fr_pos = mp.FluxRegion(center=mp.Vector3(0,0,cell_size.z/4),size=mp.Vector3(rect_a,rect_b,0))
+fr_neg = mp.FluxRegion(center=mp.Vector3(0,0,-cell_size.z/4),size=mp.Vector3(rect_b,rect_a,0))
+fr_pos = mp.FluxRegion(center=mp.Vector3(0,0,cell_size.z/4),size=mp.Vector3(rect_b,rect_a,0))
 
 sim = mp.Simulation(
     cell_size=cell_size,
