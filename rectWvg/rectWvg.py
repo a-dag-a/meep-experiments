@@ -17,7 +17,8 @@ rect_b = 122 ####61 # 61 mils
 src_wavelength = 158 #rect_a/3.1 #158 # 158 mils = 4 mm, wavelength
 rect_len = 6*rect_b ####6*rect_a #6*src_wavelength
 d_pml = 1*src_wavelength# rect_b ####rect_a #src_wavelength
-cell_size = mp.Vector3(2*d_pml+rect_a,2*d_pml+rect_b,2*d_pml+rect_len)
+d_wall = 0.5*rect_a # metal wall thickness
+cell_size = mp.Vector3(2*d_wall+2*d_pml+rect_a,2*d_wall+2*d_pml+rect_b,2*d_pml+rect_len)
 
 # OVERALL GEOMETRY
 geometry = []
@@ -33,7 +34,7 @@ boundary_layers = [mp.PML(thickness=d_pml)] # PML all round
 f_cen = 1/src_wavelength
 f_wid = 0.001 # calculated value for 71-86 GHz
 resolution = round(5/rect_a,3) ####round(5/rect_b,3) # 5 cells per shorter edge of the waveguide # 10/src_wavelength # 10 cells per wavelength
-run_time = cell_size.z # enough to reach the other end 10*src_wavelength # 15 cycles of the center tone
+run_time = 8000 #cell_size.z # enough to reach the other end 10*src_wavelength # 15 cycles of the center tone
 
 num_cells = [s*resolution for s in [cell_size.x, cell_size.y, cell_size.z]]
 print(f'Info: Number of cells is {num_cells[0]}x{num_cells[1]}x{num_cells[2]} = {num_cells[0]*num_cells[1]*num_cells[2]} cells for {run_time*2*resolution} time steps')
@@ -109,8 +110,8 @@ mp.at_every(interval, mp.output_sfield_x),
 mp.at_every(interval, mp.output_sfield_y),
 mp.at_every(interval, mp.output_sfield_z),
 # mp.at_every(interval, recordSourcePulse)
-# until=run_time
-until_after_sources= 2*cell_size.z # src_wavelength # one period after cutoff
+until=run_time
+# until_after_sources= 2*cell_size.z # src_wavelength # one period after cutoff
 )
 # To view the h5 files:
 # h5topng -0 -y 0 -Z -c /home/balram/miniconda3/envs/mp/share/h5utils/colormaps/bluered ./rectWvg-hz*.h5
