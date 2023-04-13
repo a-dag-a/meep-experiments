@@ -35,7 +35,7 @@ src = mlab.pipeline.vector_field(u, v, w)
 
 # An interactive cut-plane! Mayavi is AWESOME!
 s = mlab.pipeline.vector_cut_plane(src, mask_points=1, scale_factor=3)
-# mlab.outline()
+mlab.outline()
 # =======================================================
 # import vtk
 

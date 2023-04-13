@@ -3,6 +3,10 @@
 # I have had to align the waveguide such that the longer edge is parallel to the Y axis in order to get the mode right
 # This is likely due to the fact that the eig_parity argument has'nt got any options for symmetry wrt X axis, it has only options for ODD/EVEN symmetry along Y and Z.
 
+
+# SEEMS LIKE PML NEEDS TO BE ALL-ROUND
+
+
 # NOTE: Script generates the correct result, but is still WIP, lot of cleanup to be done!
 import meep as mp
 
@@ -12,17 +16,18 @@ rect_b = 122 ####61 # 61 mils
 
 src_wavelength = 158 #rect_a/3.1 #158 # 158 mils = 4 mm, wavelength
 rect_len = 6*rect_b ####6*rect_a #6*src_wavelength
-d_pml = rect_b ####rect_a #src_wavelength
+d_pml = 1*src_wavelength# rect_b ####rect_a #src_wavelength
 cell_size = mp.Vector3(2*d_pml+rect_a,2*d_pml+rect_b,2*d_pml+rect_len)
 
 # OVERALL GEOMETRY
 geometry = []
 geometry.append(mp.Block(center=mp.Vector3(), size=cell_size, material=mp.metal))
-geometry.append(mp.Block(center=mp.Vector3(), size=mp.Vector3(rect_a,rect_b,rect_len), material=mp.air))
+geometry.append(mp.Block(center=mp.Vector3(), size=mp.Vector3(rect_a,rect_b,cell_size.z), material=mp.air))
 
 # BOUNDARY CONDITIONS
 # boundary_layers = []
-boundary_layers = [mp.PML(thickness=d_pml,direction=mp.Z)] # PML boundaries only on open ends of the waveguide
+# boundary_layers = [mp.PML(thickness=d_pml,direction=mp.Z)] # PML boundaries only on open ends of the waveguide
+boundary_layers = [mp.PML(thickness=d_pml)] # PML all round
 
 # FREQUENCY, RESOLUTION, AND RUN TIME
 f_cen = 1/src_wavelength
@@ -43,8 +48,8 @@ kpoint = mp.Vector3(0,0,-1) # multiples of 2pi/a?
 bnum = 1
 sources = [
     mp.EigenModeSource(
-    # mp.GaussianSource(frequency=f_cen,fwidth=f_wid),
-    mp.ContinuousSource(frequency=f_cen,fwidth=f_wid),
+    mp.GaussianSource(frequency=f_cen,fwidth=f_wid),
+    # mp.ContinuousSource(frequency=f_cen,fwidth=f_wid),
     center=mp.Vector3(0,0,-(cell_size.z/2-d_pml)),
     size=mp.Vector3(rect_a,rect_b,0), # just the waveguide cavity
     # size=mp.Vector3(cell_size.x,cell_size.y,0), # the entire cross section, including metal walls
@@ -54,6 +59,18 @@ sources = [
     eig_parity=mp.EVEN_Y,
     eig_match_freq=True)
 ]
+
+# # DEBUG: CHECKING PML QUALITY WITH A NORMAL GAUSSIAN PULSE SOURCE
+# sources = [
+#     mp.Source(
+#     mp.GaussianSource(frequency=f_cen,fwidth=f_wid),
+#     # mp.ContinuousSource(frequency=f_cen,fwidth=f_wid),
+#     center=mp.Vector3(0,0,0),
+#     size=mp.Vector3(0,0,0),
+#     amplitude=1,
+#     component=mp.Ex
+#     )
+# ]
 
 # MONITOR PLANES
 fr_neg = mp.FluxRegion(center=mp.Vector3(0,0,-cell_size.z/4),size=mp.Vector3(rect_a,rect_b,0))
@@ -71,7 +88,16 @@ nfreqs = 501
 flux_neg = sim.add_flux(f_cen,2*f_wid,nfreqs,fr_neg)
 flux_pos = sim.add_flux(f_cen,2*f_wid,nfreqs,fr_pos)
 
-interval = 100# 30
+interval = 2#10# 30
+
+# sourcePulse = {}
+# sourcePulse['data'] = 0
+# sourcePulse['interval'] = interval
+# temp_sourcePulse_data = []
+# def recordSourcePulse():
+#     sim.get
+#     temp_sourcePulse_data.append()
+
 sim.run(mp.at_beginning(mp.output_epsilon),
 mp.at_every(interval, mp.output_efield_x),
 mp.at_every(interval, mp.output_efield_y),
@@ -82,13 +108,32 @@ mp.at_every(interval, mp.output_hfield_z),
 mp.at_every(interval, mp.output_sfield_x),
 mp.at_every(interval, mp.output_sfield_y),
 mp.at_every(interval, mp.output_sfield_z),
-until=2*run_time
-# until_after_sources=src_wavelength # one period after cutoff
+# mp.at_every(interval, recordSourcePulse)
+# until=run_time
+until_after_sources= 2*cell_size.z # src_wavelength # one period after cutoff
 )
+# To view the h5 files:
+# h5topng -0 -y 0 -Z -c /home/balram/miniconda3/envs/mp/share/h5utils/colormaps/bluered ./rectWvg-hz*.h5
 
 print('='*30)
 print('DONE!')
+# =============================================================================
+# DUMPING THE GIF FILES
+print('='*50)
+import os
+print('Converting h5 -> png ... ')
+os.system('h5topng -0 -R -y 0 -Z -c /home/balram/miniconda3/envs/mp/share/h5utils/colormaps/bluered ./rectWvg-ex*.h5')
 
+print('Deleting old files ... ')
+os.system('rm h5_files/*')
+os.system('rm png_files/*')
+
+print('Moving png files ... ')
+os.system('mv *.png png_files')
+
+print('Moving png files ... ')
+os.system('mv *.h5 h5_files ')
+print('='*50)
 # =============================================================================
 
 import matplotlib.pyplot as plt
