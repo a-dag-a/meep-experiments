@@ -5,7 +5,7 @@ parser = argparse.ArgumentParser()
 # file_template = args[file_template]
 
 # file_template = "rectWvg-{}{}-001951.22.h5"
-file_template = "rectWvg-{}{}-001560.98.h5"
+file_template = "./h5_files/rectWvg-{}{}-007310.98.h5"
 
 import h5py
 import numpy as np
