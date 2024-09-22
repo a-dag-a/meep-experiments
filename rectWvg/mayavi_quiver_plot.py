@@ -1,19 +1,24 @@
+'''
+Visualize the vector fields for E, H or S (Poynting vector) in the problem volume
+- Optional dielectric overlay
+'''
+
 import argparse
+from mayavi import mlab
+import h5py
+import numpy as np
+
 parser = argparse.ArgumentParser()
 # parser.add_argument('file_template',type=str,default="data_WR-12/trial_rectWvgApertures-{}{}-001840.70.h5")
 # args = parser.parse_args()
 # file_template = args[file_template]
 
-# file_template = "rectWvg-{}{}-001951.22.h5"
+# Test input
 file_template = "./h5_files/rectWvg-{}{}-007310.98.h5"
 
-import h5py
-import numpy as np
-
-def fetchVectorData(file_template):
-
+def fetchVectorData(file_template, field='e'):
+    # field can be either 'e','h', or 's' (Poynting vector)
     data = {} # dict for x,y,z arrays
-    field = 'e' # 'e' or 'h'
     for c in ['x','y','z']:
         filename = file_template.format(field,c)
         print(f'Reading {filename} ...')
@@ -25,42 +30,23 @@ def fetchVectorData(file_template):
     w = data[f'{field}z']
     return u,v,w
 
-u,v,w = fetchVectorData(file_template)
-from mayavi import mlab
-
+# field can be either 'e','h', or 's' (Poynting vector)
+u,v,w = fetchVectorData(file_template,field='h')
 src = mlab.pipeline.vector_field(u, v, w)
 # mlab.pipeline.vectors(src, mask_points=10, scale_factor=3.)
 # mlab.outline()
 
 
-# An interactive cut-plane! Mayavi is AWESOME!
+# An interactive cut-plane on which the quiver plot is rendered
 s = mlab.pipeline.vector_cut_plane(src, mask_points=1, scale_factor=3)
-mlab.outline()
-# =======================================================
-# import vtk
+# mlab.outline()
+mlab.colorbar()
 
-# # Create a reader object and specify the VTK file to read
-# reader = vtk.vtkDataSetReader()
-# reader.SetFileName(filename)
-
-# # Update the reader to read the file
-# reader.Update()
-
-# # Get the output data object from the reader
-# data = reader.GetOutput()
-
-# # Access the data as a structured grid
-# structured_grid = vtk.vtkStructuredGrid.SafeDownCast(data)
-
-# # Get the point data
-# point_data = structured_grid.GetPointData()
-
-# # Get the electric field data array
-# e_field_array = point_data.GetArray("E")
-
-# # Get the scalar range of the data array
-# scalar_range = e_field_array.GetRange()
-
-# # Print some information about the data array
-# print("Electric field array name:", e_field_array.GetName())
-# print("Scalar range:", scalar_range)
+# Optional dielectric map overlay
+filename = "./h5_files/rectWvg-eps-000000.00.h5"
+print(f'Reading dielectric map from {filename} ...')
+f = h5py.File(filename)
+eps = np.array(f['eps'])
+src = mlab.pipeline.scalar_field(eps)
+mlab.pipeline.volume(src)
+# mlab.pipeline.iso_surface(src, contours=[s.min()+0.1*s.ptp(), ], opacity=0.1)
