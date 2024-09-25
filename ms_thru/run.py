@@ -37,48 +37,33 @@ geom__ms_length = 10 # microstrip line length
 sx = geom__ms_length
 sy = geom__ms_width + 4
 sz = geom__ms_sub + geom__ms_air
-# cell = mp.Vector3(sx, sy, sz)  # 3D simulation, z>0
 
 # Define materials
 air = mp.Medium(epsilon=1)
 substrate = mp.Medium(epsilon=4)  # Dielectric substrate
-# metal = mp.metal  # PEC for metal strip
-# metal = mp.Medium(epsilon=500)  # for visualization
-# metal = mp.Medium(epsilon=5)  # for visualization
-metal = Cu
+metal = mp.metal  # PEC for metal strip
 
 # Geometry of the microstrip: suibstrate slab, metal line and slab of air on top
 geometry = [
-    # mp.Block( # slab of air
-    #     size=mp.Vector3(geom__ms_length, sy, geom__ms_air), 
-    #     center=mp.Vector3(0, 0, geom__ms_air/2), 
-    #     material=air),
-    # mp.Block( # slab of substrate
-    #     size=mp.Vector3(geom__ms_length, sy, geom__ms_sub), 
-    #     center=mp.Vector3(0, 0, -geom__ms_sub/2), 
-    #     material=substrate),
-    # mp.Block( # metal ground plane
-    #     size=mp.Vector3(geom__ms_length, sy, 0), 
-    #     center=mp.Vector3(0, 0, -geom__ms_sub), 
-    #     material=metal),
-    # mp.Block( # metal signal trace
-    #     size=mp.Vector3(geom__ms_length, geom__ms_width, 0), 
-    #     center=mp.Vector3(0, 0, 0), 
-    #     material=metal),
+    mp.Block( # slab of air
+        size=mp.Vector3(geom__ms_length, sy, geom__ms_air), 
+        center=mp.Vector3(0, 0, geom__ms_air/2), 
+        material=air),
+        # material=mp.Medium(epsilon=2)),
+    mp.Block( # slab of substrate
+        size=mp.Vector3(geom__ms_length, sy, geom__ms_sub), 
+        center=mp.Vector3(0, 0, -geom__ms_sub/2), 
+        material=substrate),
+    mp.Block( # metal ground plane
+        size=mp.Vector3(geom__ms_length, sy, 0), 
+        # size=mp.Vector3(geom__ms_length, geom__ms_width, 0), 
+        center=mp.Vector3(0, 0, -geom__ms_sub), 
+        material=metal),
+    mp.Block( # metal signal trace
+        size=mp.Vector3(geom__ms_length, geom__ms_width, 0), 
+        center=mp.Vector3(0, 0, 0), 
+        material=metal),
 ]
-
-# # Shift everything along x by geom_length/2
-# for g in geometry:
-#     center_coord = g.center
-#     center_coord.x -= geom__ms_length/2
-#     g.center = center_coord
-
-# # Add a marker cube at the origin
-# geometry.append(mp.Block( # A marker for the origin
-#         size=mp.Vector3(3,3,3), 
-#         center=mp.Vector3(0, 0, 0), 
-#         material=metal)
-# )
 
 # Boundary conditions
 PML_THICKNESS = 1
@@ -112,8 +97,6 @@ sim = mp.Simulation(cell_size=cell,
 # Initialize the simulation and output the epsilon (dielectric constant) map
 sim.init_sim()
 
-
-
 # def func_E(r, ex, ey, ez):
 #     # return (r.x * r.norm() + ex) - (eps * hz)
 #     return [ex,ey,ez]
@@ -132,7 +115,14 @@ sim.run(
     # mp.at_every(0.5,mp.output_efield_x),
     # mp.at_every(0.5,mp.output_efield_y),
     # mp.at_every(0.5,mp.output_efield_z),
-    until=1)
+    until=0)
 import os
-os.system("h5tovtk *.h5")
+# os.system("h5tovtk *.h5")
+os.system("mv *.h5 h5_files")
 print("Done! ====================")
+
+# DEBUGGING EPS
+# data = eps.flatten()
+# plt.hist(data, bins=20, color='blue', edgecolor='black')
+
+
