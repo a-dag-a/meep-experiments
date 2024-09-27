@@ -29,13 +29,13 @@ resolution = 10 # pixels per micron
 
 # Global parameters
 geom__ms_width = 1 # signal trace width
-geom__ms_sub = 5 # substrate height
+geom__ms_sub = 3 # substrate height
 geom__ms_air = geom__ms_sub # height of air above the signal trace
 geom__ms_length = 10 # microstrip line length
 
 # total cell size
 sx = geom__ms_length
-sy = geom__ms_width + 4
+sy = 9*geom__ms_width
 sz = geom__ms_sub + geom__ms_air
 
 # Define materials
@@ -77,18 +77,32 @@ cell = mp.Vector3(sx, sy, sz)  # 3D simulation, z>0
 # sources = []      
 # Source (continuous wave - CW source)
 # frequency = 1.0  # Frequency of the source
-frequency = 1/10  # Frequency of the source
-sources = [mp.Source(mp.ContinuousSource(frequency=frequency),
-                     component=mp.Ez,
-                     center=mp.Vector3(0, 0, -geom__ms_sub/2),
-                    #  center=mp.Vector3(geom__ms_length/2, 0, -geom__ms_sub/2),
-                     size=mp.Vector3(0,geom__ms_width,geom__ms_sub))]
+frequency = 1/5  # Frequency of the source
+sources = [
+    mp.Source(
+                mp.ContinuousSource(frequency=frequency),
+                component=mp.Ez,
+                # center=mp.Vector3(0, 0, -geom__ms_sub/2),
+                # center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
+                center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
+                size=mp.Vector3(0,3*geom__ms_width,geom__ms_sub)
+        )
+]
+
+# # DEBUG: To visualize sources
+# _dummySource = mp.Block(
+#     size=mp.Vector3(0,2*geom__ms_width,geom__ms_sub),
+#     center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
+#     material=mp.Medium(epsilon=0.9)
+# )
+# geometry.append(_dummySource)
 
 # Simulation object
 sim = mp.Simulation(cell_size=cell,
                     boundary_layers=pml_layers,
                     geometry=geometry,
                     sources=sources,
+                    # symmetries=[mp.Mirror(direction=mp.Y)], # Use with caution, this can forbid some modes from being launched!
                     resolution=resolution)
 
 # Run the simulation for a certain number of timesteps
@@ -97,25 +111,17 @@ sim = mp.Simulation(cell_size=cell,
 # Initialize the simulation and output the epsilon (dielectric constant) map
 sim.init_sim()
 
-# def func_E(r, ex, ey, ez):
-#     # return (r.x * r.norm() + ex) - (eps * hz)
-#     return [ex,ey,ez]
-
-# def my_weird_output(sim):
-#     mp.Simulation.output_field_function("weird-function", [mp.Ex, mp.Ey, mp.Ez], func_E)
-
-# mp.Simulation.run(mp.at_every(0.5,my_weird_output), until=2)
-
 # Dummy run to output the epsilon file
 sim.run(
     mp.at_beginning(mp.output_epsilon),
-    # mp.output_efield_x,
-    # mp.at_every(0.25,func_E),
-    # mp.at_every(0.5,mp.output_efield),
-    # mp.at_every(0.5,mp.output_efield_x),
-    # mp.at_every(0.5,mp.output_efield_y),
-    # mp.at_every(0.5,mp.output_efield_z),
-    until=0)
+    mp.at_every(1,mp.output_efield_x),
+    mp.at_every(1,mp.output_efield_y),
+    mp.at_every(1,mp.output_efield_z),
+    mp.at_every(1,mp.output_hfield_x),
+    mp.at_every(1,mp.output_hfield_y),
+    mp.at_every(1,mp.output_hfield_z),
+    until=10)
+
 import os
 # os.system("h5tovtk *.h5")
 os.system("mv *.h5 h5_files")
@@ -124,5 +130,3 @@ print("Done! ====================")
 # DEBUGGING EPS
 # data = eps.flatten()
 # plt.hist(data, bins=20, color='blue', edgecolor='black')
-
-
