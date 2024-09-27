@@ -77,12 +77,12 @@ geometry = [
         size=mp.Vector3(geom__ms_length, sy, geom__ms_sub), 
         center=mp.Vector3(0, 0, -geom__ms_sub/2), 
         material=substrate),
-    makeNgonPrism(
-        center=mp.Vector3(0,0,-geom__ms_sub/2),
-        radius=1,
-        N=3,
-        height=geom__ms_sub
-    ),
+    # makeNgonPrism(
+    #     center=mp.Vector3(0,0,-geom__ms_sub/2),
+    #     radius=1,
+    #     N=3,
+    #     height=geom__ms_sub
+    # ),
     # mp.Block( # metal ground plane
     #     size=mp.Vector3(geom__ms_length, sy, 0), 
     #     # size=mp.Vector3(geom__ms_length, geom__ms_width, 0), 
@@ -93,6 +93,15 @@ geometry = [
     #     center=mp.Vector3(0, 0, 0), 
     #     material=metal),
 ]
+
+# lattice vectors
+_vec_a = 2*mp.Vector3(1,0,0)
+_vec_b = 2*mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)
+_radius = 0.5
+for m in range(-3,3):
+    for n in range(-3,3):
+        geometry.append(mp.Cylinder(_radius, center=(m*_vec_a+n*_vec_b)))
+        # geometry.append(mp.Cylinder(_radius, center=mp.Vector3(0,0,0)))
 
 # Boundary conditions
 PML_THICKNESS = 1
