@@ -175,7 +175,7 @@ sources = [
                 # center=mp.Vector3(0, 0, -geom__ms_sub/2),
                 # center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
                 # center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
-                center=(-3*_vec_a+mp.Vector3(0, 0, -geom__ms_sub/2)), # place midway along TL
+                center=(-5*_vec_a+mp.Vector3(0, 0, -geom__ms_sub/2)), # place midway along TL
                 size=mp.Vector3(0,3*geom__ms_width,geom__ms_sub)
         )
 ]
@@ -195,7 +195,7 @@ sim = mp.Simulation(cell_size=cell_size,
                     sources=sources,
                     # symmetries=[mp.Mirror(direction=mp.Y)], # Use with caution, this can forbid some modes from being launched!
                     resolution=resolution,
-                    # eps_averaging=False # comment out for actual simulation
+                    eps_averaging=False # comment out for actual simulation
                     )
 
 # Run the simulation for a certain number of timesteps
@@ -207,13 +207,13 @@ sim.init_sim()
 # Dummy run to output the epsilon file
 sim.run(
     mp.at_beginning(mp.output_epsilon),
-    # mp.at_every(1,mp.output_efield_x),
-    # mp.at_every(1,mp.output_efield_y),
-    # mp.at_every(1,mp.output_efield_z),
-    # mp.at_every(1,mp.output_hfield_x),
-    # mp.at_every(1,mp.output_hfield_y),
-    # mp.at_every(1,mp.output_hfield_z),
-    until=0)
+    mp.at_every(1,mp.output_efield_x),
+    mp.at_every(1,mp.output_efield_y),
+    mp.at_every(1,mp.output_efield_z),
+    mp.at_every(1,mp.output_hfield_x),
+    mp.at_every(1,mp.output_hfield_y),
+    mp.at_every(1,mp.output_hfield_z),
+    until=10)
 
 
 import os
@@ -225,7 +225,7 @@ from uuid import uuid4
 import matplotlib.pyplot as plt
 sim.plot2D(output_plane=mp.Volume(center=mp.Vector3(),size=mp.Vector3(cell_size.x,cell_size.y,0)), fields=mp.Ex)
 plt.title(str(uuid4()))
-plt.savefig('espilon.png')
+plt.savefig('epsilon.png')
 # plt.show()
 # DEBUGGING EPS
 # data = eps.flatten()
