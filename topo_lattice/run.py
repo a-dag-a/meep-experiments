@@ -108,25 +108,26 @@ geometry = [
 ]
 
 # lattice vectors
-_scaling = 1
-_vec_a = 5*mp.Vector3(1,0,0)*_scaling
-_vec_b = 5*mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)*_scaling
+_scaling = 5
+_vec_a = mp.Vector3(1,0,0)*_scaling
+_vec_b = mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)*_scaling
 _radius = 0.5 #0.1*_scaling #(0.25*np.sin(np.pi/3))#*_scaling
 
 # Punch a bunch of holes
-p = 0.5
-_d = _vec_a+_vec_b#mp.Vector3(1,0,0)
+p = 0.5 # p=0 is symmetric, p=1 is maximum antisymmetry (one hole shrinks to zero size)
+_d = mp.Vector3(np.cos(np.pi/6),np.sin(np.pi/6),0)
+_offset = 1/(2*(3**0.5))*_scaling
 
-Na = 2 # odd number
-Nb = 2 # odd number
+Na = 3 # odd number
+Nb = 3 # odd number
 for m in range(-Na,Na):
     for n in range(-Nb,Nb):
 # m=0;n=0
         _cell_size_center = m*_vec_a + n*_vec_b
         # Type A hole
-        geometry.append(mp.Cylinder(_radius, center=_cell_size_center + 0.25*_d))
+        geometry.append(mp.Cylinder(_radius*(1+p), center=_cell_size_center + _offset*_d))
         # Type B hole
-        geometry.append(mp.Cylinder(_radius, center=_cell_size_center - 0.25*_d))
+        geometry.append(mp.Cylinder(_radius*(1-p), center=_cell_size_center - _offset*_d))
 
 
 # _cell_size_center = 1*_vec_a + 0*_vec_b
@@ -206,10 +207,12 @@ import os
 os.system("mv *.h5 h5_files")
 print("Done! ====================")
 
+from uuid import uuid4
 import matplotlib.pyplot as plt
 sim.plot2D(output_plane=mp.Volume(center=mp.Vector3(),size=mp.Vector3(cell_size.x,cell_size.y,0)), fields=mp.Ex)
+plt.title(str(uuid4()))
 plt.savefig('espilon.png')
-plt.show()
+# plt.show()
 # DEBUGGING EPS
 # data = eps.flatten()
 # plt.hist(data, bins=20, color='blue', edgecolor='black')
