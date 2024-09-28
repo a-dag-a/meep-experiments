@@ -45,13 +45,13 @@ def makeNgonPrism(center,radius,N=3,height=mp.inf):#,material=mp.Medium(epsilon=
 
     return prism
 
-def makeUnitCell(cell_center,vec_a,vec_b,p=0.5):
-    ''' The parameter 'p' controls the relative size of the two air holes in each unti cell'''
+def makeUnitcell_size(cell_size_center,vec_a,vec_b,p=0.5):
+    ''' The parameter 'p' controls the relative size of the two air holes in each unti cell_size'''
     _radius = 0.5
     geometry = []
     # geometry.append(mp.Block()) # no need the main geometry will add a top level slab of dielectric
-    geometry.append(mp.Cylinder(p*_radius, center=cell_center+0.25*(_vec_a+_vec_b)))
-    geometry.append(mp.Cylinder(p*_radius, center=cell_center-0.75*(_vec_a+_vec_b)))
+    geometry.append(mp.Cylinder(p*_radius, center=cell_size_center+0.25*(_vec_a+_vec_b)))
+    geometry.append(mp.Cylinder(p*_radius, center=cell_size_center-0.75*(_vec_a+_vec_b)))
     return geometry
 
 # Simulation parameters
@@ -65,7 +65,7 @@ geom__ms_sub = 1 # substrate height
 geom__ms_air = geom__ms_sub # height of air above the signal trace
 geom__ms_length = 10 # microstrip line length
 
-# # total cell size
+# # total cell_size size
 # sx = geom__ms_length
 # sy = 9*geom__ms_width
 # sz = geom__ms_sub + geom__ms_air
@@ -108,32 +108,36 @@ geometry = [
 ]
 
 # lattice vectors
-_scaling = 2
-_vec_a = mp.Vector3(1,0,0)*_scaling
-_vec_b = mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)*_scaling
-_radius = (0.25*np.sin(np.pi/3))*_scaling
+_scaling = 1
+_vec_a = 5*mp.Vector3(1,0,0)*_scaling
+_vec_b = 5*mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)*_scaling
+_radius = 0.5 #0.1*_scaling #(0.25*np.sin(np.pi/3))#*_scaling
 
 # Punch a bunch of holes
-p = 0.75
-Na = 3 # odd number
-Nb = 3 # odd number
+p = 0.5
+_d = _vec_a+_vec_b#mp.Vector3(1,0,0)
+
+Na = 2 # odd number
+Nb = 2 # odd number
 for m in range(-Na,Na):
     for n in range(-Nb,Nb):
-        # geometry.append(mp.Cylinder(_radius, center=(m*_vec_a+n*_vec_b)))
-        # geometry.append(mp.Cylinder(_radius, center=mp.Vector3(0,0,0)))
-        # geometry.extend(
-        #     makeUnitCell(
-        #         m*_vec_a+n*_vec_b,
-        #         _vec_a,
-        #         _vec_b,
-        #         0.6)
-        # )
-        
-        _cell_center = m*_vec_a + n*_vec_b
+# m=0;n=0
+        _cell_size_center = m*_vec_a + n*_vec_b
         # Type A hole
-        geometry.append(mp.Cylinder(_radius*p, center=_cell_center - 0.25*(_vec_a+_vec_b)))
+        geometry.append(mp.Cylinder(_radius, center=_cell_size_center + 0.25*_d))
         # Type B hole
-        geometry.append(mp.Cylinder(_radius*(1-p), center=_cell_center + 0.25*(_vec_a+_vec_b)))
+        geometry.append(mp.Cylinder(_radius, center=_cell_size_center - 0.25*_d))
+
+
+# _cell_size_center = 1*_vec_a + 0*_vec_b
+# # Type A hole
+# geometry.append(mp.Cylinder(_radius, center=_cell_size_center - 0.25*_d))
+# # Type B hole
+# geometry.append(mp.Cylinder(0.5*_radius, center=_cell_size_center + 0.25*_d))
+
+
+
+
 
 # Dummy marker
 geometry.append(mp.Cylinder(0.25*_radius, center=(0,0,0)))
@@ -146,7 +150,7 @@ pml_layers = [mp.PML(thickness=PML_THICKNESS)]  # PML absorbing layers
 sx += 2*PML_THICKNESS
 sy += 2*PML_THICKNESS
 sz += 2*PML_THICKNESS
-cell = mp.Vector3(sx, sy, sz)  # 3D simulation, z>0
+cell_size = mp.Vector3(sx, sy, sz)  # 3D simulation, z>0
 
 # sources = []      
 # Source (continuous wave - CW source)
@@ -172,7 +176,7 @@ sources = [
 # geometry.append(_dummySource)
 
 # Simulation object
-sim = mp.Simulation(cell_size=cell,
+sim = mp.Simulation(cell_size=cell_size,
                     boundary_layers=pml_layers,
                     geometry=geometry,
                     sources=sources,
@@ -196,11 +200,16 @@ sim.run(
     # mp.at_every(1,mp.output_hfield_z),
     until=0)
 
+
 import os
 # os.system("h5tovtk *.h5")
 os.system("mv *.h5 h5_files")
 print("Done! ====================")
 
+import matplotlib.pyplot as plt
+sim.plot2D(output_plane=mp.Volume(center=mp.Vector3(),size=mp.Vector3(cell_size.x,cell_size.y,0)), fields=mp.Ex)
+plt.savefig('espilon.png')
+plt.show()
 # DEBUGGING EPS
 # data = eps.flatten()
 # plt.hist(data, bins=20, color='blue', edgecolor='black')
