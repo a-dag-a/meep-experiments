@@ -45,6 +45,14 @@ def makeNgonPrism(center,radius,N=3,height=mp.inf):#,material=mp.Medium(epsilon=
 
     return prism
 
+def makeUnitCell(cell_center,vec_a,vec_b,p=0.5):
+    ''' The parameter 'p' controls the relative size of the two air holes in each unti cell'''
+    _radius = 0.5
+    geometry = []
+    # geometry.append(mp.Block()) # no need the main geometry will add a top level slab of dielectric
+    geometry.append(mp.Cylinder(p*_radius, center=cell_center+0.25*(_vec_a+_vec_b)))
+    geometry.append(mp.Cylinder(p*_radius, center=cell_center-0.75*(_vec_a+_vec_b)))
+    return geometry
 
 # Simulation parameters
 # resolution = 50  # pixels per micron
@@ -52,13 +60,18 @@ resolution = 10 # pixels per micron
 
 # Global parameters
 geom__ms_width = 1 # signal trace width
-geom__ms_sub = 3 # substrate height
+# geom__ms_sub = 3 # substrate height
+geom__ms_sub = 1 # substrate height
 geom__ms_air = geom__ms_sub # height of air above the signal trace
 geom__ms_length = 10 # microstrip line length
 
-# total cell size
-sx = geom__ms_length
-sy = 9*geom__ms_width
+# # total cell size
+# sx = geom__ms_length
+# sy = 9*geom__ms_width
+# sz = geom__ms_sub + geom__ms_air
+
+sx = 20
+sy = 20
 sz = geom__ms_sub + geom__ms_air
 
 # Define materials
@@ -69,12 +82,12 @@ metal = mp.metal  # PEC for metal strip
 # Geometry of the microstrip: suibstrate slab, metal line and slab of air on top
 geometry = [
     mp.Block( # slab of air
-        size=mp.Vector3(geom__ms_length, sy, geom__ms_air), 
+        size=mp.Vector3(sx, sy, geom__ms_air), 
         center=mp.Vector3(0, 0, geom__ms_air/2), 
         material=air),
         # material=mp.Medium(epsilon=2)),
     mp.Block( # slab of substrate
-        size=mp.Vector3(geom__ms_length, sy, geom__ms_sub), 
+        size=mp.Vector3(sx, sy, geom__ms_sub), 
         center=mp.Vector3(0, 0, -geom__ms_sub/2), 
         material=substrate),
     # makeNgonPrism(
@@ -95,13 +108,36 @@ geometry = [
 ]
 
 # lattice vectors
-_vec_a = 2*mp.Vector3(1,0,0)
-_vec_b = 2*mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)
-_radius = 0.5
-for m in range(-3,3):
-    for n in range(-3,3):
-        geometry.append(mp.Cylinder(_radius, center=(m*_vec_a+n*_vec_b)))
+_scaling = 2
+_vec_a = mp.Vector3(1,0,0)*_scaling
+_vec_b = mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)*_scaling
+_radius = (0.25*np.sin(np.pi/3))*_scaling
+
+# Punch a bunch of holes
+p = 0.75
+Na = 3 # odd number
+Nb = 3 # odd number
+for m in range(-Na,Na):
+    for n in range(-Nb,Nb):
+        # geometry.append(mp.Cylinder(_radius, center=(m*_vec_a+n*_vec_b)))
         # geometry.append(mp.Cylinder(_radius, center=mp.Vector3(0,0,0)))
+        # geometry.extend(
+        #     makeUnitCell(
+        #         m*_vec_a+n*_vec_b,
+        #         _vec_a,
+        #         _vec_b,
+        #         0.6)
+        # )
+        
+        _cell_center = m*_vec_a + n*_vec_b
+        # Type A hole
+        geometry.append(mp.Cylinder(_radius*p, center=_cell_center - 0.25*(_vec_a+_vec_b)))
+        # Type B hole
+        geometry.append(mp.Cylinder(_radius*(1-p), center=_cell_center + 0.25*(_vec_a+_vec_b)))
+
+# Dummy marker
+geometry.append(mp.Cylinder(0.25*_radius, center=(0,0,0)))
+
 
 # Boundary conditions
 PML_THICKNESS = 1
