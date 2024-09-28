@@ -70,8 +70,11 @@ geom__ms_length = 10 # microstrip line length
 # sy = 9*geom__ms_width
 # sz = geom__ms_sub + geom__ms_air
 
-sx = 20
-sy = 20
+# test with small sx,sy for quick visualization
+# sx=20
+# sy=20
+sx = 100
+sy = 60
 sz = geom__ms_sub + geom__ms_air
 
 # Define materials
@@ -111,23 +114,31 @@ geometry = [
 _scaling = 5
 _vec_a = mp.Vector3(1,0,0)*_scaling
 _vec_b = mp.Vector3(np.cos(np.pi/3),np.sin(np.pi/3),0)*_scaling
-_radius = 0.5 #0.1*_scaling #(0.25*np.sin(np.pi/3))#*_scaling
+_radius = 1 #0.1*_scaling #(0.25*np.sin(np.pi/3))#*_scaling
 
 # Punch a bunch of holes
-p = 0.5 # p=0 is symmetric, p=1 is maximum antisymmetry (one hole shrinks to zero size)
+p = 0.1 # p=0 is symmetric, p=1 is maximum antisymmetry (one hole shrinks to zero size)
 _d = mp.Vector3(np.cos(np.pi/6),np.sin(np.pi/6),0)
 _offset = 1/(2*(3**0.5))*_scaling
 
-Na = 3 # odd number
-Nb = 3 # odd number
-for m in range(-Na,Na):
-    for n in range(-Nb,Nb):
-# m=0;n=0
+def _topoZone(m,n):
+    t = 1
+    if(m<0 and n<0):
+        t=-1
+    return t
+# Na = 6 # odd number
+# Nb = 6 # odd number
+# for m in range(-4,5): # horizontal
+for m in range(-8,9): # horizontal
+    for n in range(-8,9): # oblique-vertical
+        # topo_sw = 1 if n>0 else -1 # flips the topology of the lattice
+        topo_sw = _topoZone(m,n) # assign topology based on 'quadrant'
+
         _cell_size_center = m*_vec_a + n*_vec_b
         # Type A hole
-        geometry.append(mp.Cylinder(_radius*(1+p), center=_cell_size_center + _offset*_d))
+        geometry.append(mp.Cylinder(_radius*(1+p), center=_cell_size_center + _offset*_d*topo_sw))
         # Type B hole
-        geometry.append(mp.Cylinder(_radius*(1-p), center=_cell_size_center - _offset*_d))
+        geometry.append(mp.Cylinder(_radius*(1-p), center=_cell_size_center - _offset*_d*topo_sw))
 
 
 # _cell_size_center = 1*_vec_a + 0*_vec_b
@@ -136,12 +147,12 @@ for m in range(-Na,Na):
 # # Type B hole
 # geometry.append(mp.Cylinder(0.5*_radius, center=_cell_size_center + 0.25*_d))
 
+# # Dummy marker
+# geometry.append(mp.Cylinder(0.25*_radius, center=(0,0,0)))
 
 
 
 
-# Dummy marker
-geometry.append(mp.Cylinder(0.25*_radius, center=(0,0,0)))
 
 
 # Boundary conditions
@@ -163,7 +174,8 @@ sources = [
                 component=mp.Ez,
                 # center=mp.Vector3(0, 0, -geom__ms_sub/2),
                 # center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
-                center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
+                # center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
+                center=(-3*_vec_a+mp.Vector3(0, 0, -geom__ms_sub/2)), # place midway along TL
                 size=mp.Vector3(0,3*geom__ms_width,geom__ms_sub)
         )
 ]
@@ -182,7 +194,9 @@ sim = mp.Simulation(cell_size=cell_size,
                     geometry=geometry,
                     sources=sources,
                     # symmetries=[mp.Mirror(direction=mp.Y)], # Use with caution, this can forbid some modes from being launched!
-                    resolution=resolution)
+                    resolution=resolution,
+                    # eps_averaging=False # comment out for actual simulation
+                    )
 
 # Run the simulation for a certain number of timesteps
 # sim.run(until=50)
