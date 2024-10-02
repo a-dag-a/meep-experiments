@@ -31,7 +31,7 @@ resolution = 10 # pixels per micron
 geom__ms_width = 1 # signal trace width
 geom__ms_sub = 3 # substrate height
 geom__ms_air = geom__ms_sub # height of air above the signal trace
-geom__ms_length = 10 # microstrip line length
+geom__ms_length = 20 # microstrip line length
 
 # total cell size
 sx = geom__ms_length
@@ -68,34 +68,48 @@ geometry = [
 # Boundary conditions
 PML_THICKNESS = 1
 pml_layers = [mp.PML(thickness=PML_THICKNESS)]  # PML absorbing layers
-# # pml_layers = [mp.Absorber(thickness=PML_THICKNESS)]  # can also use 'absorber' instead of PML
+# pml_layers = [mp.Absorber(thickness=PML_THICKNESS)]  # can also use 'absorber' instead of PML
 sx += 2*PML_THICKNESS
 sy += 2*PML_THICKNESS
 sz += 2*PML_THICKNESS
 cell = mp.Vector3(sx, sy, sz)  # 3D simulation, z>0
 
-# sources = []      
-# Source (continuous wave - CW source)
-# frequency = 1.0  # Frequency of the source
-frequency = 1/5  # Frequency of the source
+# Gaussian pulse source
+_source_freq = 1/(geom__ms_length/2)
 sources = [
     mp.Source(
-                mp.ContinuousSource(frequency=frequency),
-                component=mp.Ez,
-                # center=mp.Vector3(0, 0, -geom__ms_sub/2),
-                # center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
-                center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
-                size=mp.Vector3(0,3*geom__ms_width,geom__ms_sub)
-        )
+        mp.GaussianSource(
+            _source_freq,
+            fwidth = 0.1*_source_freq,
+            cutoff=2, # shut down the source after 2 temporal widths
+        ),
+        component = mp.Ez,
+        center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
+        size=mp.Vector3(0,3*geom__ms_width,geom__ms_sub)
+    )
 ]
 
-# # DEBUG: To visualize sources
-# _dummySource = mp.Block(
-#     size=mp.Vector3(0,2*geom__ms_width,geom__ms_sub),
-#     center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
-#     material=mp.Medium(epsilon=0.9)
-# )
-# geometry.append(_dummySource)
+# Source (continuous wave - CW source)
+# frequency = 1/5  # Frequency of the source
+# sources = [
+#     mp.Source(
+#                 mp.ContinuousSource(frequency=frequency),
+#                 component=mp.Ez,
+#                 # center=mp.Vector3(0, 0, -geom__ms_sub/2),
+#                 # center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
+#                 center=mp.Vector3(0, 0, -geom__ms_sub/2), # place midway along TL
+#                 size=mp.Vector3(0,3*geom__ms_width,geom__ms_sub)
+#         )
+# ]
+
+# DEBUG: To visualize sources
+_dummySource = mp.Block(
+    size=mp.Vector3(0,2*geom__ms_width,geom__ms_sub),
+    center=mp.Vector3(0, 0, -geom__ms_sub/2),
+    # center=mp.Vector3(-geom__ms_length/2, 0, -geom__ms_sub/2),
+    material=mp.Medium(epsilon=8)
+)
+geometry.append(_dummySource)
 
 # Simulation object
 sim = mp.Simulation(cell_size=cell,
@@ -114,6 +128,7 @@ sim.init_sim()
 # Dummy run to output the epsilon file
 sim.run(
     mp.at_beginning(mp.output_epsilon),
+    # until=0) # just for geometry export
     mp.at_every(1,mp.output_efield_x),
     mp.at_every(1,mp.output_efield_y),
     mp.at_every(1,mp.output_efield_z),
