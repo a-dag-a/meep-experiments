@@ -10,6 +10,9 @@ export PATH= /home/bgpillai/miniconda/bin:$PATH
 # Call conda init once to setup the shell
 ~/miniconda/bin/conda init
 
+# call bash again to get the conda command
+bash
+
 # Serial variant of pymeep
 # conda create -n mp -c conda-forge pymeep pymeep-extras
 
